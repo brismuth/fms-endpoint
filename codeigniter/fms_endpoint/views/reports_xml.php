@@ -29,6 +29,7 @@ foreach($query->result() as $row) {
 	xml_add_child($request, 'zipcode', $row->postal_code);
 	xml_add_child($request, 'lat', $row->lat);
 	xml_add_child($request, 'long', $row->long);
+        xml_add_child($request, 'email', $row->email);
 	xml_add_child($request, 'media_url', $row->media_url);
 }
 

@@ -339,6 +339,9 @@ $config['rewrite_short_tags'] = FALSE;
 */
 $config['proxy_ips'] = '';
 
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST');  
+date_default_timezone_set('UTC');
 
 /* End of file config.php */
 /* Location: ./system/application/config/config.php */

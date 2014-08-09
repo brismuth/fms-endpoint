@@ -64,8 +64,8 @@ class Reports extends CI_Controller {
 		$description = (isset($_POST['description'])) ? $_POST['description'] : NULL;
 		$lat = (isset($_POST['lat'])) ? $_POST['lat'] : NULL;
 		$long = (isset($_POST['long'])) ? $_POST['long'] : NULL;
-		$requested_datetime = (!empty($_POST['requested_datetime'])) ? $_POST['requested_datetime'] : date("Y-m-d H:i:s",time());
-		$address_string = (isset($_POST['address_string'])) ? $_POST['address_string'] : NULL;
+		$expected_datetime = (isset($_POST['expected_datetime'])) ? $_POST['expected_datetime'] : NULL;
+                $address_string = (isset($_POST['address_string'])) ? $_POST['address_string'] : NULL;
 		$address_id = (!empty($_POST['address_id'])) ? $_POST['address_id'] : '';
 		$email = (isset($_POST['email'])) ? $_POST['email'] : NULL;
 		$device_id = (!empty($_POST['device_id'])) ? $_POST['device_id'] : '';
@@ -85,7 +85,8 @@ class Reports extends CI_Controller {
 		}
 		
 		$data = array(
-			'address_id' 				=> $address_id           ,
+			'updated_datetime' 		=> date("Y-m-d H:i:s",time()),
+			'address_id' 			=> $address_id           ,
 			'device_id' 			=> $device_id         ,
 			'account_id' 			=> $account_id        ,
 			'first_name' 			=> $first_name        ,
@@ -117,7 +118,9 @@ class Reports extends CI_Controller {
 		if (!is_null($media_url)) {
 			$data['media_url'] = $media_url;
 		}
-
+                if (!is_null($expected_datetime)) {
+                        $data['expected_datetime'] = $expected_datetime;
+                }
 		
 		if (isset($source_client)) {
 			$data['source_client'] = $source_client;
@@ -130,19 +133,19 @@ class Reports extends CI_Controller {
 			$data['status_notes'] = $status_notes;
 		}
 
-		 $report_id = (!empty($_POST['service_request_id'])) ? $_POST['service_request_id'] : '';
+		$report_id = (!empty($_POST['service_request_id'])) ? $_POST['service_request_id'] : '';
                 if (!empty($report_id))
                 {
                     $this->db->update('reports', $data, "report_id = $report_id");
                 }
                 else
                 {
-                    $data['requested_datetime'] = $requested_datetime;
-		    $this->db->insert('reports', $data);
+                    $data['requested_datetime'] = date("Y-m-d H:i:s",time());
+                    $this->db->insert('reports', $data);
                     $report_id = $this->db->insert_id();
                 }
 
-		
+
 		// TODO: json
 		if ($format == 'xml') {
 			return $this->get_xml_post_response($report_id);
