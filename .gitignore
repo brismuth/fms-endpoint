@@ -1,4 +1,4 @@
 .DS_Store
 conf/general.yml
-codeigniter/logs/log*
-
+codeigniter/logs/logo
+nbproject/

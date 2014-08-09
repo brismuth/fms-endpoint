@@ -61,21 +61,21 @@ class Reports extends CI_Controller {
 			}
 		}
 		
-		$description = (!empty($_POST['description'])) ? $_POST['description'] : '';
-		$lat = (!empty($_POST['lat'])) ? $_POST['lat'] : '';
-		$long = (!empty($_POST['long'])) ? $_POST['long'] : '';
+		$description = (isset($_POST['description'])) ? $_POST['description'] : NULL;
+		$lat = (isset($_POST['lat'])) ? $_POST['lat'] : NULL;
+		$long = (isset($_POST['long'])) ? $_POST['long'] : NULL;
 		$requested_datetime = (!empty($_POST['requested_datetime'])) ? $_POST['requested_datetime'] : date("Y-m-d H:i:s",time());
-		$address_string = (!empty($_POST['address_string'])) ? $_POST['address_string'] : '';
+		$address_string = (isset($_POST['address_string'])) ? $_POST['address_string'] : NULL;
 		$address_id = (!empty($_POST['address_id'])) ? $_POST['address_id'] : '';
-		$email = (!empty($_POST['email'])) ? $_POST['email'] : '';
+		$email = (isset($_POST['email'])) ? $_POST['email'] : NULL;
 		$device_id = (!empty($_POST['device_id'])) ? $_POST['device_id'] : '';
 		$account_id = (!empty($_POST['account_id'])) ? $_POST['account_id'] : '';
 		$first_name = (!empty($_POST['first_name'])) ? $_POST['first_name'] : '';
 		$last_name = (!empty($_POST['last_name'])) ? $_POST['last_name'] : '';
 		$phone = (!empty($_POST['phone'])) ? $_POST['phone'] : '';
-		$media_url = (!empty($_POST['media_url'])) ? $_POST['media_url'] : '';
+		$media_url = (isset($_POST['media_url'])) ? $_POST['media_url'] : NULL;
 
-		$status = (!empty($_POST['status'])) ? $_POST['status'] : REPORT_DEFAULT_STATUS;
+		$status = (isset($_POST['status'])) ? $_POST['status'] : REPORT_DEFAULT_STATUS;
 		$status_lookup = $this->db->get_where('statuses', array('status_name' => trim(strtolower($status))), 1);
 		if ($status_lookup->num_rows()==1) {
 			$status = $status_lookup->row()->status_id;
@@ -85,23 +85,39 @@ class Reports extends CI_Controller {
 		}
 		
 		$data = array(
-			'status'				=> $status,
-			'category_id' 			=> $service_code      ,
-			'description' 			=> $description       ,
-			'lat'			 		=> $lat               ,
-			'long' 					=> $long              ,
-			'requested_datetime' 	=> $requested_datetime,
-			'address' 				=> $address_string    ,
-			'address_id' 			=> $address_id        ,
-			'email' 				=> $email             ,
+			'address_id' 				=> $address_id           ,
 			'device_id' 			=> $device_id         ,
 			'account_id' 			=> $account_id        ,
 			'first_name' 			=> $first_name        ,
 			'last_name' 			=> $last_name         ,
-			'phone' 				=> $phone             ,
-			'media_url' 			=> $media_url         ,
-#			'source_client'         => $source_client
+			'phone' 				=> $phone            
 		);
+               
+                if (!is_null($status)) {
+			$data['status'] = $status;
+		}
+		if (!is_null($service_code)) {
+			$data['category_id'] = $service_code;
+		}
+		if (!is_null($description)) {
+			$data['description'] = $description;
+		}
+		if (!is_null($lat)) {
+			$data['lat'] = $lat;
+		}
+		if (!is_null($long)) {
+			$data['long'] = $long;
+		}
+		if (!is_null($address_string)) {
+			$data['address'] = $address_string;
+		}
+		if (!is_null($email)) {
+			$data['email'] = $email;
+		}
+		if (!is_null($media_url)) {
+			$data['media_url'] = $media_url;
+		}
+
 		
 		if (isset($source_client)) {
 			$data['source_client'] = $source_client;
@@ -114,10 +130,19 @@ class Reports extends CI_Controller {
 			$data['status_notes'] = $status_notes;
 		}
 
-		$this->db->insert('reports', $data);
+		 $report_id = (!empty($_POST['service_request_id'])) ? $_POST['service_request_id'] : '';
+                if (!empty($report_id))
+                {
+                    $this->db->update('reports', $data, "report_id = $report_id");
+                }
+                else
+                {
+                    $data['requested_datetime'] = $requested_datetime;
+		    $this->db->insert('reports', $data);
+                    $report_id = $this->db->insert_id();
+                }
 
-		$report_id = $this->db->insert_id();
-
+		
 		// TODO: json
 		if ($format == 'xml') {
 			return $this->get_xml_post_response($report_id);
@@ -128,6 +153,8 @@ class Reports extends CI_Controller {
 	}
 
 	function get_feed($format) {
+		parse_str(substr(strrchr($_SERVER['REQUEST_URI'], "?"), 1), $_GET);
+
 		if (empty($format)) {
 			$format = 'xml';
 		}
@@ -191,12 +218,14 @@ class Reports extends CI_Controller {
 	}
 	
 	function get_service_request_updates($format) {
+		parse_str(substr(strrchr($_SERVER['REQUEST_URI'], "?"), 1), $_GET);
+
 		if (!empty($_GET['jurisdiction_id'])) {
 			// TODO, currently ignoring jurisdiction
 		}
 		
 		$this->db->from('request_updates');
-		$this->db->where('is_outbound =', 1);
+	//	$this->db->where('is_outbound =', 1);
 		
 		if (!empty($_GET['start_date'])) {
 			$start_date = date("Y-m-d H:i:s", strtotime($_GET['start_date']));
@@ -205,6 +234,11 @@ class Reports extends CI_Controller {
 		if (!empty($_GET['end_date'])) {
 			$end_date = date("Y-m-d H:i:s", strtotime($_GET['end_date']));
 			$this->db->where('updated_at <=', $end_date);
+		}
+
+		if (!empty($_GET['service_request_id'])) {
+			$report_id = $_GET['service_request_id'];
+			$this->db->where('report_id =', $report_id);
 		}
 		
 		$this->db->join('statuses', 'request_updates.status_id = statuses.status_id');
