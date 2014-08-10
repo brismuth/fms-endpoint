@@ -61,6 +61,8 @@ class Reports extends CI_Controller {
 			}
 		}
 		
+                
+                $report_id = (!empty($_POST['service_request_id'])) ? $_POST['service_request_id'] : '';
 		$description = (isset($_POST['description'])) ? $_POST['description'] : NULL;
 		$lat = (isset($_POST['lat'])) ? $_POST['lat'] : NULL;
 		$long = (isset($_POST['long'])) ? $_POST['long'] : NULL;
@@ -75,14 +77,20 @@ class Reports extends CI_Controller {
 		$phone = (!empty($_POST['phone'])) ? $_POST['phone'] : '';
 		$media_url = (isset($_POST['media_url'])) ? $_POST['media_url'] : NULL;
 
-		$status = (isset($_POST['status'])) ? $_POST['status'] : REPORT_DEFAULT_STATUS;
-		$status_lookup = $this->db->get_where('statuses', array('status_name' => trim(strtolower($status))), 1);
-		if ($status_lookup->num_rows()==1) {
-			$status = $status_lookup->row()->status_id;
-		} else {
-			$status_notes = "Received with unrecognised status: $status";
-			$status = REPORT_UNKNOWN_STATUS_ID;
-		}
+		$status = NULL;
+                if (isset($_POST['status'])) {
+                        $status =  $_POST['status'];
+                        $status_lookup = $this->db->get_where('statuses', array('status_name' => trim(strtolower($status))), 1);
+                        if ($status_lookup->num_rows()==1) {
+                                $status = $status_lookup->row()->status_id;
+                        } else {
+                                $status_notes = "Received with unrecognised status: $status";
+                                $status = REPORT_UNKNOWN_STATUS_ID;
+                        }
+                } else if (empty($report_id)) {
+                        $status = REPORT_DEFAULT_STATUS;
+                }
+
 		
 		$data = array(
 			'updated_datetime' 		=> date("Y-m-d H:i:s",time()),
@@ -133,7 +141,6 @@ class Reports extends CI_Controller {
 			$data['status_notes'] = $status_notes;
 		}
 
-		$report_id = (!empty($_POST['service_request_id'])) ? $_POST['service_request_id'] : '';
                 if (!empty($report_id))
                 {
                     $this->db->update('reports', $data, "report_id = $report_id");
